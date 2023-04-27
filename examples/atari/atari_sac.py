@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import wandb
 
-from utils import (
+from lrl.utils import (
     Envs,
     Buffer,
     ConvNet,
@@ -15,7 +15,7 @@ from utils import (
     DiscreteCritic,
     train
 )
-from policy import DiscreteSAC
+from lrl.policy import DiscreteSAC
 
 
 class PreprocessNet(nn.Module):
@@ -31,37 +31,37 @@ class PreprocessNet(nn.Module):
         return self.net(states)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--project', type = str, default = 'breakout')
-    parser.add_argument('--name', type = str, default = 'sac')
+    parser.add_argument("--project", type = str, default = "breakout")
+    parser.add_argument("--name", type = str, default = "sac")
 
-    parser.add_argument('--env-name', type = str, default = 'ALE/Breakout-v5')
-    parser.add_argument('--n-train-envs', type = int, default = 10)
-    parser.add_argument('--n-test-envs', type = int, default = 10)
+    parser.add_argument("--env-name", type = str, default = "ALE/Breakout-v5")
+    parser.add_argument("--n-train-envs", type = int, default = 10)
+    parser.add_argument("--n-test-envs", type = int, default = 10)
 
-    parser.add_argument('--alpha', type = float, default = 0.05)
-    parser.add_argument('--gamma', type = float, default = 0.99)
-    parser.add_argument('--tau', type = float, default = 5e-3)
+    parser.add_argument("--alpha", type = float, default = 0.05)
+    parser.add_argument("--gamma", type = float, default = 0.99)
+    parser.add_argument("--tau", type = float, default = 5e-3)
 
-    parser.add_argument('--channels', type = Sequence[int], default = [3, 32, 64, 64])
-    parser.add_argument('--kernel-sizes', type = Sequence[int], default = [8, 4, 3])
-    parser.add_argument('--strides', type = Sequence[int], default = [4, 2, 1])
-    parser.add_argument('--paddings', type = Sequence[int], default = [0, 0, 0])
-    parser.add_argument('--hidden-size', type = int, default = 512)
-    parser.add_argument('--activation-fn', type = nn.Module, default = nn.ReLU)
-    parser.add_argument('--batch-size', type = int, default = 64)
-    parser.add_argument('--lr', type = float, default = 1e-5)
+    parser.add_argument("--channels", type = Sequence[int], default = [3, 32, 64, 64])
+    parser.add_argument("--kernel-sizes", type = Sequence[int], default = [8, 4, 3])
+    parser.add_argument("--strides", type = Sequence[int], default = [4, 2, 1])
+    parser.add_argument("--paddings", type = Sequence[int], default = [0, 0, 0])
+    parser.add_argument("--hidden-size", type = int, default = 512)
+    parser.add_argument("--activation-fn", type = nn.Module, default = nn.ReLU)
+    parser.add_argument("--batch-size", type = int, default = 64)
+    parser.add_argument("--lr", type = float, default = 1e-5)
 
-    parser.add_argument('--buffer-size', type = int, default = 100000)
-    parser.add_argument('--n-epochs', type = int, default = 1000)
-    parser.add_argument('--collect-per-epoch', type = int, default = 1000)                          
-    parser.add_argument('--step-per-collect', type = int, default = 1)
-    parser.add_argument('--update-per-collect', type = int, default = 1)
+    parser.add_argument("--buffer-size", type = int, default = 100000)
+    parser.add_argument("--n-epochs", type = int, default = 1000)
+    parser.add_argument("--collect-per-epoch", type = int, default = 1000)                          
+    parser.add_argument("--step-per-collect", type = int, default = 1)
+    parser.add_argument("--update-per-collect", type = int, default = 1)
 
-    parser.add_argument('--device', type = str, default = 'cuda' if torch.cuda.is_available() else 'cpu')
+    parser.add_argument("--device", type = str, default = "cuda" if torch.cuda.is_available() else "cpu")
 
     args = parser.parse_args()
     wandb.init(project = args.project, name = args.name, config = args)
@@ -77,7 +77,7 @@ if __name__ == '__main__':
         1,
         args.n_train_envs,
         args.step_per_collect,
-        action_dtype = torch.long
+        action_dtype = torch.int64
     )
 
     preprocess_net = ConvNet(
@@ -120,7 +120,7 @@ if __name__ == '__main__':
         update_per_collect = args.update_per_collect,
         batch_size = args.batch_size,
         device = args.device
-    )
+    ).to(args.device)
 
     train(
         train_envs = train_envs,

@@ -5,14 +5,14 @@ import torch
 import torch.nn as nn
 from torch.distributions import Categorical, Normal, Independent
 
-def orthogonal_init(net, gain):
+def orthogonal_init(net: nn.Module, gain: float):
 
     for module in net.modules():
         if isinstance(module, nn.Linear):
             nn.init.orthogonal_(module.weight, gain = gain)
             nn.init.zeros_(module.bias)
 
-def soft_update(tau, net, target_net):
+def soft_update(tau: float, net: nn.Module, target_net: nn.Module):
 
     for params, target_params in zip(net.parameters(), target_net.parameters()):
 
@@ -35,7 +35,7 @@ class MLP(nn.Module):
             modules += [nn.Linear(input_size, output_size), activation_fn()]
         self.net = nn.Sequential(*modules)
 
-    def forward(self, states: torch.tensor, actions: Optional[torch.tensor] = None):
+    def forward(self, states: torch.Tensor, actions: Optional[torch.Tensor] = None):
 
         if actions is not None:
             states = torch.cat([states, actions], dim = -1)
@@ -62,7 +62,7 @@ class ConvNet(nn.Module):
         modules += [nn.Flatten(), nn.LazyLinear(hidden_size), activation_fn()]
         self.net = nn.Sequential(*modules)
 
-    def forward(self, states: torch.tensor):
+    def forward(self, states: torch.Tensor):
 
         return self.net(states)
 
@@ -80,7 +80,7 @@ class DiscreteActor(nn.Module):
         self.preprocess_net = preprocess_net
         self.logits = nn.Linear(hidden_size, action_dim)
 
-    def forward(self, states: torch.tensor, deterministic: bool = False):
+    def forward(self, states: torch.Tensor, deterministic: bool = False):
 
         hidden_states = self.preprocess_net(states)
         logits = self.logits(hidden_states)
@@ -94,7 +94,7 @@ class DiscreteActor(nn.Module):
         return actions
     
     # For PPO
-    def compute_dists_and_log_probs(self, states: torch.tensor, actions: torch.tensor):
+    def compute_dists_and_log_probs(self, states: torch.Tensor, actions: torch.Tensor):
 
         hidden_states = self.preprocess_net(states)
         logits = self.logits(hidden_states)
@@ -104,7 +104,7 @@ class DiscreteActor(nn.Module):
         return dists, log_probs
     
     # For SAC
-    def compute_probs(self, states: torch.tensor):
+    def compute_probs(self, states: torch.Tensor):
 
         hidden_states = self.preprocess_net(states)
         logits = self.logits(hidden_states)
@@ -123,18 +123,10 @@ class GaussianActor(nn.Module):
         action_bound: float,
         bound_action_method: str,
         log_sigma: Optional[float] = None,
-        trainable_sigma: bool = True
+        trainable_sigma: Optional[bool] = True
     ):
         
-        '''
-        bound_action_method: either 'clip' or 'tanh'.
-
-        log_sigma: initial value of logarithm of the standard variance. If None, the standard variance will depend on states.
-
-        trainable_sigma: whether the standard variance is a learnable parameter. If False, the logarithm of the standard vaiance is constantly log_sigma.
-        '''
-        
-        assert log_sigma is not None or trainable_sigma, 'the standard variance must be assigned if it is not a learnable parameter.'
+        assert log_sigma is not None or trainable_sigma, "the standard variance must be assigned if it is not a learnable parameter."
 
         super().__init__()
 
@@ -153,7 +145,7 @@ class GaussianActor(nn.Module):
         orthogonal_init(self.preprocess_net, gain = np.sqrt(2))
         orthogonal_init(self.mu, gain = np.sqrt(2) * 1e-2)
 
-    def compute_dists(self, states: torch.tensor):
+    def compute_dists(self, states: torch.Tensor):
 
         hidden_states = self.preprocess_net(states)
         mus = self.mu(hidden_states)
@@ -168,7 +160,7 @@ class GaussianActor(nn.Module):
 
         return dists
 
-    def forward(self, states: torch.tensor, deterministic: bool = False):
+    def forward(self, states: torch.Tensor, deterministic: Optional[bool] = False):
             
         if deterministic:
             hidden_states = self.preprocess_net(states)
@@ -177,39 +169,39 @@ class GaussianActor(nn.Module):
             dists = self.compute_dists(states)
             actions = dists.rsample()
 
-        if self.bound_action_method == 'clip':
+        if self.bound_action_method == "clip":
             actions = actions.clamp(-self.action_bound, self.action_bound)
-        elif self.bound_action_method == 'tanh':
+        elif self.bound_action_method == "tanh":
             actions = self.action_bound * actions.tanh()
 
         return actions
     
     # for PPO
-    def compute_dists_and_log_probs(self, states, actions):
+    def compute_dists_and_log_probs(self, states: torch.Tensor, actions: torch.Tensor):
 
         dists = self.compute_dists(states)
-        if self.bound_action_method == 'tanh':
+        if self.bound_action_method == "tanh":
             orginal_actions = torch.atanh(actions / self.action_bound)
         
         log_probs = dists.log_prob(orginal_actions).unsqueeze(-1)
 
-        if self.bound_action_method == 'tanh':
+        if self.bound_action_method == "tanh":
             log_probs = (log_probs - torch.log(1 - actions.pow(2) + torch.finfo(torch.float32).eps).sum(-1).unsqueeze(-1)) / self.action_bound
 
         return dists, log_probs
     
     # for SAC
-    def compute_actions_and_log_probs(self, states):
+    def compute_actions_and_log_probs(self, states: torch.Tensor):
 
         dists = self.compute_dists(states)
         actions = dists.rsample()
 
-        if self.bound_action_method == 'clip':
+        if self.bound_action_method == "clip":
             actions = actions.clamp(-self.action_bound, self.action_bound)
 
         log_probs = dists.log_prob(actions).unsqueeze(-1)
 
-        if self.bound_action_method == 'tanh':
+        if self.bound_action_method == "tanh":
             actions = self.action_bound * actions.tanh()
             log_probs = (log_probs - (1 - actions.pow(2) + torch.finfo(torch.float32).eps).log().sum(-1).unsqueeze(-1)) / self.action_bound
 
@@ -221,18 +213,10 @@ class DiscreteCritic(nn.Module):
     def __init__(self, preprocess_net: nn.Module, hidden_size: int, action_dim: int):
         super().__init__()
 
-        '''
-        just for Q(s,a). For V(s), simply use 
-        nn.Sequential(
-            preprocess_net,
-            nn.Linear(hidden_size, 1)
-        )
-        '''
-
         self.preprocess_net = preprocess_net
         self.value = nn.Linear(hidden_size, action_dim)
 
-    def forward(self, states: torch.tensor, actions: Optional[torch.tensor] = None):
+    def forward(self, states: torch.Tensor, actions: Optional[torch.Tensor] = None):
 
         hidden_states = self.preprocess_net(states)
         values = self.value(hidden_states)
@@ -249,18 +233,10 @@ class ContinuousCritic(nn.Module):
     def __init__(self, preprocess_net: nn.Module, hidden_size: int):
         super().__init__()
 
-        '''
-        just for Q(s,a). For V(s), simply use 
-        nn.Sequential(
-            preprocess_net,
-            nn.Linear(hidden_size, 1)
-        )
-        '''
-
         self.preprocess_net = preprocess_net
         self.value = nn.Linear(hidden_size, 1)
 
-    def forward(self, states: torch.tensor, actions: Optional[torch.tensor]):
+    def forward(self, states: torch.Tensor, actions: Optional[torch.Tensor]):
 
         hidden_states = self.preprocess_net(states, actions)
         values = self.value(hidden_states)

@@ -1,12 +1,12 @@
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
 import numpy as np
 import torch
 from tqdm import tqdm
 import wandb
 
-from utils import Envs
-from utils import Buffer
+from lrl.utils import Envs
+from lrl.utils import Buffer
 
 
 def train(train_envs, test_envs, buffer, policy, n_epochs, collect_per_epoch, step_per_collect, **kwargs):
@@ -22,8 +22,8 @@ class Trainer:
         test_envs: Envs,
         buffer: Buffer,
         policy: Any,
-        norm_states: bool = False,
-        scale_rewards: bool = False
+        norm_states: Optional[bool] = False,
+        scale_rewards: Optional[bool] = False
     ):
 
         self.train_envs = train_envs
@@ -41,7 +41,7 @@ class Trainer:
         if scale_rewards:
             self.reward_scaler = RewardScaler(n_envs = len(train_envs), gamma = policy.gamma)
         
-    def collect(self, n_steps: int, random: bool = False):
+    def collect(self, n_steps: int, random: Optional[bool] = False):
 
         with torch.no_grad():
             for _ in range(n_steps):
@@ -51,7 +51,7 @@ class Trainer:
                 else:
                     states = torch.tensor(self.states, dtype = torch.float32).to(self.policy.device)
                     actions = self.policy.actor(states)
-                    actions = actions.to('cpu').numpy()
+                    actions = actions.to("cpu").numpy()
 
                 next_states, rewards, terminated, truncated, _ = self.train_envs.step(actions)
 
@@ -88,7 +88,7 @@ class Trainer:
 
                 states = torch.tensor(states, dtype = torch.float32).to(self.policy.device)
                 actions = self.policy.actor(states, deterministic = True)
-                actions = actions.to('cpu').numpy()
+                actions = actions.to("cpu").numpy()
                 states, rewards, terminated, truncated, _ = self.test_envs.step(actions, indices)
                 all_states[indices] = states
                 returns[indices] += rewards
@@ -115,8 +115,8 @@ class Trainer:
                 ret = self.test()
 
                 wandb.log({
-                    'step': (n_epoch + 1) * collect_per_epoch * step_per_collect * len(self.train_envs),
-                    'return': ret
+                    "step": (n_epoch + 1) * collect_per_epoch * step_per_collect * len(self.train_envs),
+                    "return": ret
                 })
 
 
@@ -144,7 +144,7 @@ class RunningMeanStd:
 
 class RewardScaler:
 
-    def __init__(self, n_envs, gamma):
+    def __init__(self, n_envs: int, gamma: float):
 
         self.R = np.zeros(n_envs)
         self.gamma = gamma

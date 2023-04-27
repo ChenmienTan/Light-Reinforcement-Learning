@@ -1,21 +1,15 @@
+from typing import Optional, Sequence
+import gymnasium as gym
 import numpy as np
 
 
 class Envs:
 
-    '''
-    vector wrapper of environments.
-
-    Usage:
-        states, infos = envs.reset(), where states.shape = (n_envs, state.shape).
-        states, rewards, terminated, truncated, infos = envs.step(actions), where states.shape = (n_envs, state.shape), rewards.shape = (n_envs, 1), terminated.shape = (n_envs, 1), truncated.shape = (n_envs, 1).
-    '''
-
-    def __init__(self, envs):
+    def __init__(self, envs: Sequence[gym.Env]):
 
         self.envs = envs
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
 
         return self.envs[idx]
 
@@ -23,7 +17,7 @@ class Envs:
 
         return len(self.envs)
 
-    def reset(self, indices = None):
+    def reset(self, indices: Optional[Sequence[int]] = None):
 
         envs = self.envs if indices is None else [self[indice] for indice in indices]
         batch = [env.reset() for env in envs]
@@ -32,7 +26,7 @@ class Envs:
 
         return states, infos
 
-    def step(self, actions, indices = None):
+    def step(self, actions: np.ndarray, indices: Optional[Sequence[int]] = None):
 
         envs = self.envs if indices is None else [self[indice] for indice in indices]
         actions = actions.squeeze(-1) if actions.shape[-1] == 1 else actions

@@ -3,12 +3,12 @@ from copy import deepcopy
 import torch
 import torch.nn as nn
 
-from utils import soft_update
+from lrl.utils import soft_update
 
 import wandb
 
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 
 class SAC(nn.Module):
@@ -24,7 +24,7 @@ class SAC(nn.Module):
         lr: float = 1e-3,
         update_per_collect: int = 1,
         batch_size: int = 256,
-        device: str = 'cpu'
+        device: str = "cpu"
     ):
         super().__init__()
 
@@ -91,6 +91,6 @@ class SAC(nn.Module):
             soft_update(self.tau, self.critic2, self.target_critic2)
 
             wandb.log({
-                'actor loss': actor_loss.item(),
-                'critic loss': critic_loss.item()
+                "actor loss": actor_loss.item(),
+                "critic loss": critic_loss.item()
             })

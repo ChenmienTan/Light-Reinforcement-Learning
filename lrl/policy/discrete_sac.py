@@ -1,13 +1,13 @@
 import torch
 
-from policy import SAC
+from lrl.policy import SAC
 
-from utils import soft_update
+from lrl.utils import soft_update
 
 import wandb
 
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 class DiscreteSAC(SAC):
 
@@ -53,6 +53,6 @@ class DiscreteSAC(SAC):
             soft_update(self.tau, self.critic2, self.target_critic2)
 
             wandb.log({
-                'actor loss': actor_loss.item(),
-                'critic loss': critic_loss.item()
+                "actor loss": actor_loss.item(),
+                "critic loss": critic_loss.item()
             })

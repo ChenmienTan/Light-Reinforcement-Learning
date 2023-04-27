@@ -12,23 +12,18 @@ class Buffer:
             action_dim: int,
             n_envs: int,
             buffer_size: int,
-            state_dtype = torch.float32,
             action_dtype = torch.float32,
         ):
-
-        '''
-        for discrete environment, set dtype = torch.long
-        '''
 
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.n_envs = n_envs
         self.buffer_size = buffer_size
 
-        self.states = torch.zeros((n_envs, buffer_size, *state_dim), dtype = state_dtype)
+        self.states = torch.zeros((n_envs, buffer_size, *state_dim), dtype = torch.float32)
         self.actions = torch.zeros((n_envs, buffer_size, action_dim), dtype = action_dtype)
         self.rewards = torch.zeros((n_envs, buffer_size, 1), dtype = torch.float32)
-        self.next_states = torch.zeros((n_envs, buffer_size, *state_dim), dtype = state_dtype)
+        self.next_states = torch.zeros((n_envs, buffer_size, *state_dim), dtype = torch.float32)
         self.terminated = torch.zeros((n_envs, buffer_size, 1), dtype = torch.bool)
         self.truncated = torch.zeros((n_envs, buffer_size, 1), dtype = torch.bool)
 
@@ -44,32 +39,19 @@ class Buffer:
         terminated: np.ndarray,
         truncated: np.ndarray
     ):
-        
-        '''
-        add a tuple (s, a, r, s') into the buffer. Only the most recent buffer_size tuples will be kept.
 
-        self.n: the position of the pointer.
-        self.n_transitions: how many tuples are stored in the buffer, at most buffer_size.
-        '''
-
-        self.states[:, self.n] = torch.tensor(states, dtype = torch.float32)
-        self.actions[:, self.n] = torch.tensor(actions, dtype = torch.float32)
-        self.rewards[:, self.n] = torch.tensor(rewards, dtype = torch.float32)
-        self.next_states[:, self.n] = torch.tensor(next_states, dtype = torch.float32)
-        self.terminated[:, self.n] = torch.tensor(terminated, dtype = torch.bool)
-        self.truncated[:, self.n] = torch.tensor(truncated, dtype = torch.bool)
+        self.states[:, self.n] = torch.Tensor(states)
+        self.actions[:, self.n] = torch.Tensor(actions)
+        self.rewards[:, self.n] = torch.Tensor(rewards)
+        self.next_states[:, self.n] = torch.Tensor(next_states)
+        self.terminated[:, self.n] = torch.Tensor(terminated)
+        self.truncated[:, self.n] = torch.Tensor(truncated)
 
         self.n = (self.n + 1) % self.buffer_size
         if self.n_transitions < self.buffer_size:
             self.n_transitions += 1
 
-    def sample(self, batch_size: Optional[int] = None, device = 'cpu'):
-
-        '''
-        sample transitions from the buffer.
-
-        batch_size: number of transitions sampled from the buffer. If None, all transitions will be retrieved. In this case, the transitions are not disrupted so that some quantities, e.g., lambda return, can be computed.
-        '''
+    def sample(self, batch_size: Optional[int] = None, device: Optional[str] = "cpu"):
 
         n_transitions = self.n_envs * self.n_transitions
 

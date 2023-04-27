@@ -1,6 +1,6 @@
-from utils.env import Envs
-from utils.buffer import Buffer
-from utils.net import (
+from lrl.utils.env import Envs
+from lrl.utils.buffer import Buffer
+from lrl.utils.net import (
     orthogonal_init,
     soft_update,
     MLP,
@@ -10,4 +10,4 @@ from utils.net import (
     DiscreteCritic,
     ContinuousCritic
 )
-from utils.train import train, Trainer
+from lrl.utils.train import train, Trainer

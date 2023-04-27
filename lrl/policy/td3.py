@@ -5,12 +5,12 @@ from copy import deepcopy
 import torch
 import torch.nn as nn
 
-from utils import soft_update
+from lrl.utils import soft_update
 
 import wandb
 
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 class TD3(nn.Module):
 
@@ -25,7 +25,7 @@ class TD3(nn.Module):
         update_per_collect: int = 1,
         batch_size: int = 256,
         actor_update_freq: int = 2,
-        device: str = 'cpu'
+        device: str = "cpu"
     ):
         super().__init__()
 

@@ -7,7 +7,7 @@ from torch.optim.lr_scheduler import LambdaLR
 import wandb
 
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 class PPO(nn.Module):
 
@@ -17,7 +17,7 @@ class PPO(nn.Module):
         critic: nn.Module,
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
-        lr: float = 3e-4,
+        lr: float = 1e-3,
         n_collects: Optional[int] = None,
         update_per_collect: int = 10,
         batch_size: int = 64,
@@ -28,7 +28,7 @@ class PPO(nn.Module):
         vf_coef: float = 0.5,
         ent_coef: float = 1e-2,
         max_grad_norm: float = 0.5,
-        device: str = 'cpu'
+        device: str = 'cpu',
     ):
         super().__init__()
 
@@ -127,9 +127,9 @@ class PPO(nn.Module):
                 self.optimizer.step()
 
                 wandb.log({
-                    'actor loss': actor_loss.item(),
-                    'critic loss': critic_loss.item(),
-                    'entropy loss': entropy_loss.item(),
+                    "actor loss": actor_loss.item(),
+                    "critic loss": critic_loss.item(),
+                    "entropy loss": entropy_loss.item(),
                 })
 
         if self.schedule_lr:

@@ -5,10 +5,10 @@ import torch
 import torch.nn as nn
 import wandb
 
-from utils import soft_update
+from lrl.utils import soft_update
 
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 
 class DDPG(nn.Module):
@@ -22,7 +22,7 @@ class DDPG(nn.Module):
         lr: float = 1e-3,
         update_per_collect: int = 1,
         batch_size: int = 256,
-        device: str = 'cpu'
+        device: str = "cpu"
     ):
         super().__init__()
 
@@ -84,8 +84,8 @@ class DDPG(nn.Module):
             soft_update(self.tau, self.critic, self.target_critic)
 
             wandb.log({
-                'actor loss': actor_loss.item(),
-                'critic loss': critic_loss.item()
+                "actor loss": actor_loss.item(),
+                "critic loss": critic_loss.item()
             })
 
 
