@@ -79,7 +79,7 @@ class TD3(nn.Module):
             critic_loss.backward()
             self.critic_optimizer.step()
 
-            wandb.log({'critic loss': critic_loss.item()})
+            wandb.log({"critic loss": critic_loss.item()})
 
             if self.n_update % self.actor_update_freq == 0:
 
@@ -100,8 +100,8 @@ class TD3(nn.Module):
                 soft_update(self.tau, self.critic2, self.target_critic2)
 
                 wandb.log({
-                    'actor loss': actor_loss.item(),
-                    'critic loss': critic_loss.item()
+                    "actor loss": actor_loss.item(),
+                    "critic loss": critic_loss.item()
                 })
 
             self.n_update += 1

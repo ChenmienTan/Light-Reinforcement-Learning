@@ -25,10 +25,12 @@ class PPO(nn.Module):
         recompute_advantages: bool = True,
         schedule_lr: bool = False,
         clip_eps: float = 0.2,
+        dual_clip: Optional[float] = None,
+        value_clip: Optional[float] = None,
         vf_coef: float = 0.5,
         ent_coef: float = 1e-2,
         max_grad_norm: float = 0.5,
-        device: str = 'cpu',
+        device: str = "cpu",
     ):
         super().__init__()
 
@@ -42,6 +44,8 @@ class PPO(nn.Module):
         self.recompute_advantages = recompute_advantages
         self.schedule_lr = schedule_lr
         self.clip_eps = clip_eps
+        self.dual_clip = dual_clip
+        self.value_clip = value_clip
         self.vf_coef = vf_coef
         self.ent_coef = ent_coef
         self.max_grad_norm = max_grad_norm
@@ -73,20 +77,20 @@ class PPO(nn.Module):
                 # compute lambda returns and advantages
 
                 with torch.no_grad():
-                    values = self.critic(states)
+                    old_values = self.critic(states)
                     next_values = self.critic(next_states)
 
                 advantage = 0
                 advantages = torch.zeros((n_transitions, 1)).to(self.device)
-                deltas = rewards + self.gamma * torch.logical_not(terminated) * next_values - values
+                deltas = rewards + self.gamma * torch.logical_not(terminated) * next_values - old_values
                 for n in range(n_transitions - 1, -1, -1):
                     advantage = torch.logical_not(dones[n]) * self.gamma * self.gae_lambda * advantage + deltas[n]
                     advantages[n] = advantage
 
-                lambda_returns = advantages + values
+                lambda_returns = advantages + old_values
 
                 if self.norm_advantages:
-                    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-9)
+                    advantages = (advantages - advantages.mean()) / (advantages.std() + torch.finfo(torch.float32).eps)
 
             Indices = np.random.permutation(n_transitions)
 
@@ -98,18 +102,33 @@ class PPO(nn.Module):
                 batch_old_log_probs = old_log_probs[indices]
                 batch_advantages = advantages[indices]
                 batch_lambda_returns = lambda_returns[indices]
+                batch_old_values = old_values[indices]
 
                 # compute actor loss
                 dists, log_probs = self.actor.compute_dists_and_log_probs(batch_states, batch_actions)
 
                 ratio = (log_probs - batch_old_log_probs).exp()
                 clamped_ratio = torch.clamp(ratio, 1 - self.clip_eps, 1 + self.clip_eps)
+                actor_obj1 = ratio * batch_advantages
+                actor_obj2 = clamped_ratio * batch_advantages
 
-                actor_loss = - torch.min(ratio * batch_advantages, clamped_ratio * batch_advantages).mean()
+                if self.dual_clip is not None:
+                    actor_obj1 = torch.min(actor_obj1, actor_obj2)
+                    actor_obj2 = torch.max(actor_obj1, self.dual_clip * batch_advantages)
+                    actor_loss = - torch.where(batch_advantages < 0, actor_obj2, actor_obj1).mean()
+                else:
+                    actor_loss = - torch.min(actor_obj1, actor_obj2).mean()
 
                 # compute critic loss
                 values = self.critic(batch_states)
-                critic_loss = (values - batch_lambda_returns).pow(2).mean()
+
+                if self.value_clip is not None:
+                    clamped_values = values.clamp(batch_old_values - self.value_clip, batch_old_values + self.value_clip)
+                    critic_obj1 = (values - batch_lambda_returns).pow(2)
+                    critic_obj2 = (clamped_values - batch_lambda_returns).pow(2)
+                    critic_loss = torch.max(critic_obj1, critic_obj2).mean()
+                else:
+                    critic_loss = (values - batch_lambda_returns).pow(2).mean()
 
                 # compute entropy loss
                 entropy_loss = - dists.entropy().mean()

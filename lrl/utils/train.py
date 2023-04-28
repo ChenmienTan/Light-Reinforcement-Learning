@@ -2,6 +2,7 @@ from typing import Any, Optional, Sequence
 
 import numpy as np
 import torch
+import torch.nn as nn
 from tqdm import tqdm
 import wandb
 
@@ -21,7 +22,7 @@ class Trainer:
         train_envs: Envs,
         test_envs: Envs,
         buffer: Buffer,
-        policy: Any,
+        policy: nn.Module,
         norm_states: Optional[bool] = False,
         scale_rewards: Optional[bool] = False
     ):

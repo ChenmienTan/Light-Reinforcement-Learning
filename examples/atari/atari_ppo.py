@@ -94,20 +94,20 @@ if __name__ == "__main__":
         paddings = args.paddings,
         hidden_size = args.hidden_size,
         activation_fn = args.activation_fn
-    ).to(args.device)
+    )
 
-    preprocess_net = PreprocessNet(preprocess_net).to(args.device)
+    preprocess_net = PreprocessNet(preprocess_net)
 
     actor = DiscreteActor(
         preprocess_net,
         args.hidden_size,
         action_dim
-    ).to(args.device)
+    )
 
     critic = nn.Sequential(
         preprocess_net,
         nn.Linear(args.hidden_size, 1)
-    ).to(args.device)
+    )
 
     policy = PPO(
         actor,

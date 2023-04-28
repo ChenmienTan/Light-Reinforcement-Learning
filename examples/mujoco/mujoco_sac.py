@@ -69,19 +69,19 @@ if __name__ == "__main__":
         input_size = state_dim[0],
         hidden_sizes = args.hidden_sizes,
         activation_fn = args.activation_fn
-    ).to(args.device)
+    )
 
     critic1_preprocess_net = MLP(
         input_size = state_dim[0] + action_dim,
         hidden_sizes = args.hidden_sizes,
         activation_fn = args.activation_fn
-    ).to(args.device)
+    )
 
     critic2_preprocess_net = MLP(
         input_size = state_dim[0] + action_dim,
         hidden_sizes = args.hidden_sizes,
         activation_fn = args.activation_fn
-    ).to(args.device)
+    )
 
     actor = GaussianActor(
         actor_preprocess_net,
@@ -89,17 +89,17 @@ if __name__ == "__main__":
         action_dim,
         action_bound,
         args.bound_action_method,
-    ).to(args.device)
+    )
 
     critic1 = ContinuousCritic(
         critic1_preprocess_net,
         args.hidden_sizes[-1]
-    ).to(args.device)
+    )
 
     critic2 = ContinuousCritic(
         critic2_preprocess_net,
         args.hidden_sizes[-1]
-    ).to(args.device)
+    )
 
     policy = SAC(
         actor,

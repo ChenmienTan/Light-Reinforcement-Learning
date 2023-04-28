@@ -78,7 +78,7 @@ if __name__ == "__main__":
         input_size = state_dim[0],
         hidden_sizes = args.hidden_sizes,
         activation_fn = args.activation_fn
-    ).to(args.device)
+    )
 
     critic_preprocess_net = MLP(
         input_size = state_dim[0],
@@ -93,12 +93,12 @@ if __name__ == "__main__":
         action_bound,
         args.bound_action_method,
         args.log_sigma
-    ).to(args.device)
+    )
 
     critic = nn.Sequential(
         critic_preprocess_net,
         nn.Linear(args.hidden_sizes[-1], 1)
-    ).to(args.device)
+    )
 
     policy = PPO(
         actor,

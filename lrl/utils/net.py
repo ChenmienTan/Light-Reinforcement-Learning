@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Tuple
 
 import numpy as np
 import torch
@@ -35,7 +35,11 @@ class MLP(nn.Module):
             modules += [nn.Linear(input_size, output_size), activation_fn()]
         self.net = nn.Sequential(*modules)
 
-    def forward(self, states: torch.Tensor, actions: Optional[torch.Tensor] = None):
+    def forward(
+            self,
+            states: torch.Tensor,
+            actions: Optional[torch.Tensor] = None
+        ) -> torch.Tensor:
 
         if actions is not None:
             states = torch.cat([states, actions], dim = -1)
@@ -62,7 +66,7 @@ class ConvNet(nn.Module):
         modules += [nn.Flatten(), nn.LazyLinear(hidden_size), activation_fn()]
         self.net = nn.Sequential(*modules)
 
-    def forward(self, states: torch.Tensor):
+    def forward(self, states: torch.Tensor) -> torch.Tensor:
 
         return self.net(states)
 
@@ -80,7 +84,11 @@ class DiscreteActor(nn.Module):
         self.preprocess_net = preprocess_net
         self.logits = nn.Linear(hidden_size, action_dim)
 
-    def forward(self, states: torch.Tensor, deterministic: bool = False):
+    def forward(
+            self,
+            states: torch.Tensor,
+            deterministic: Optional[bool] = False
+        ) -> torch.Tensor:
 
         hidden_states = self.preprocess_net(states)
         logits = self.logits(hidden_states)
@@ -94,7 +102,11 @@ class DiscreteActor(nn.Module):
         return actions
     
     # For PPO
-    def compute_dists_and_log_probs(self, states: torch.Tensor, actions: torch.Tensor):
+    def compute_dists_and_log_probs(
+            self,
+            states: torch.Tensor,
+            actions: torch.Tensor
+        ) -> Tuple[Categorical, torch.Tensor]:
 
         hidden_states = self.preprocess_net(states)
         logits = self.logits(hidden_states)
@@ -104,7 +116,7 @@ class DiscreteActor(nn.Module):
         return dists, log_probs
     
     # For SAC
-    def compute_probs(self, states: torch.Tensor):
+    def compute_probs(self, states: torch.Tensor) -> torch.Tensor:
 
         hidden_states = self.preprocess_net(states)
         logits = self.logits(hidden_states)
@@ -145,7 +157,7 @@ class GaussianActor(nn.Module):
         orthogonal_init(self.preprocess_net, gain = np.sqrt(2))
         orthogonal_init(self.mu, gain = np.sqrt(2) * 1e-2)
 
-    def compute_dists(self, states: torch.Tensor):
+    def compute_dists(self, states: torch.Tensor) -> Independent:
 
         hidden_states = self.preprocess_net(states)
         mus = self.mu(hidden_states)
@@ -160,7 +172,11 @@ class GaussianActor(nn.Module):
 
         return dists
 
-    def forward(self, states: torch.Tensor, deterministic: Optional[bool] = False):
+    def forward(
+            self,
+            states: torch.Tensor,
+            deterministic: Optional[bool] = False
+        ) -> torch.Tensor:
             
         if deterministic:
             hidden_states = self.preprocess_net(states)
@@ -177,7 +193,11 @@ class GaussianActor(nn.Module):
         return actions
     
     # for PPO
-    def compute_dists_and_log_probs(self, states: torch.Tensor, actions: torch.Tensor):
+    def compute_dists_and_log_probs(
+            self,
+            states: torch.Tensor,
+            actions: torch.Tensor
+        ) -> Tuple[Independent, torch.Tensor]:
 
         dists = self.compute_dists(states)
         if self.bound_action_method == "tanh":
@@ -191,7 +211,10 @@ class GaussianActor(nn.Module):
         return dists, log_probs
     
     # for SAC
-    def compute_actions_and_log_probs(self, states: torch.Tensor):
+    def compute_actions_and_log_probs(
+            self,
+            states: torch.Tensor
+        ) -> Tuple[torch.Tensor, torch.Tensor]:
 
         dists = self.compute_dists(states)
         actions = dists.rsample()
@@ -216,7 +239,11 @@ class DiscreteCritic(nn.Module):
         self.preprocess_net = preprocess_net
         self.value = nn.Linear(hidden_size, action_dim)
 
-    def forward(self, states: torch.Tensor, actions: Optional[torch.Tensor] = None):
+    def forward(
+            self,
+            states: torch.Tensor,
+            actions: Optional[torch.Tensor] = None
+        ) -> torch.Tensor:
 
         hidden_states = self.preprocess_net(states)
         values = self.value(hidden_states)
@@ -236,7 +263,11 @@ class ContinuousCritic(nn.Module):
         self.preprocess_net = preprocess_net
         self.value = nn.Linear(hidden_size, 1)
 
-    def forward(self, states: torch.Tensor, actions: Optional[torch.Tensor]):
+    def forward(
+            self,
+            states: torch.Tensor,
+            actions: Optional[torch.Tensor]
+        ) -> torch.Tensor:
 
         hidden_states = self.preprocess_net(states, actions)
         values = self.value(hidden_states)

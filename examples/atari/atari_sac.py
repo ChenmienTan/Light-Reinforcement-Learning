@@ -87,27 +87,27 @@ if __name__ == "__main__":
         paddings = args.paddings,
         hidden_size = args.hidden_size,
         activation_fn = args.activation_fn
-    ).to(args.device)
+    )
 
-    preprocess_net = PreprocessNet(preprocess_net).to(args.device)
+    preprocess_net = PreprocessNet(preprocess_net)
 
     actor = DiscreteActor(
         preprocess_net,
         args.hidden_size,
         action_dim
-    ).to(args.device)
+    )
 
     critic1 = DiscreteCritic(
         preprocess_net,
         args.hidden_size,
         action_dim
-    ).to(args.device)
+    )
 
     critic2 = DiscreteCritic(
         preprocess_net,
         args.hidden_size,
         action_dim
-    ).to(args.device)
+    )
 
     policy = DiscreteSAC(
         actor,
