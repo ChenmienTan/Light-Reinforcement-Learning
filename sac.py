@@ -95,10 +95,10 @@ class SAC(nn.Module):
             soft_update(self.tau, self.critic1, self.target_critic1)
             soft_update(self.tau, self.critic2, self.target_critic2)
 
-            # wandb.log({
-            #     "actor loss": actor_loss.item(),
-            #     "critic loss": critic_loss.item()
-            # })
+            wandb.log({
+                "actor loss": actor_loss.item(),
+                "critic loss": critic_loss.item()
+            })
 
 
 if __name__ == "__main__":

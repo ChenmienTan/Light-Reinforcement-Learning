@@ -150,11 +150,11 @@ class PPO(nn.Module):
 
                 self.optimizer.step()
 
-                # wandb.log({
-                #     "actor loss": actor_loss.item(),
-                #     "critic loss": critic_loss.item(),
-                #     "entropy loss": entropy_loss.item(),
-                # })
+                wandb.log({
+                    "actor loss": actor_loss.item(),
+                    "critic loss": critic_loss.item(),
+                    "entropy loss": entropy_loss.item(),
+                })
 
         if self.schedule_lr:
             self.scheduler.step()

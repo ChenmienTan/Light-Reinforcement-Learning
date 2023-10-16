@@ -3,7 +3,7 @@ from typing import Optional, Sequence, Tuple
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.distributions import Categorical, Normal, Independent
+from torch.distributions import Normal, Independent
 
 def orthogonal_init(net: nn.Module, gain: float):
 
@@ -58,7 +58,7 @@ class GaussianActor(nn.Module):
         bound_action_method: str,
         log_sigma: Optional[float] = None,
         trainable_sigma: Optional[bool] = True,
-        log_sigma_bound: Optional[Tuple[int]] = (-20, 2) # ?
+        log_sigma_bound: Optional[Tuple[int]] = (-20, 2)
     ):
         super().__init__()
 

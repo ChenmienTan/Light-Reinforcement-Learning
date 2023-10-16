@@ -66,8 +66,8 @@ class Buffer:
         terminates = self.terminates[:self.n_trans]
         truncates = self.truncates[:self.n_trans]
         
-        truncates[self.idx - 1] = np.zeros(self.n_envs, dtype = np.bool)
-        truncates[-1] = np.zeros(self.n_envs, dtype = np.bool)
+        truncates[self.idx - 1] = np.ones(self.n_envs, dtype = np.bool_)
+        truncates[-1] = np.ones(self.n_envs, dtype = np.bool_)
         
         states = states.swapaxes(0, 1).reshape(-1, *self.state_dim)
         actions = actions.swapaxes(0, 1).reshape(-1, self.action_dim)
@@ -148,7 +148,7 @@ class Trainer:
     def valid(self):
 
         returns = np.zeros(len(self.valid_envs))
-        dones = np.zeros(len(self.valid_envs), dtype = bool)
+        dones = np.zeros(len(self.valid_envs), dtype = np.bool_)
         all_states, _ = self.valid_envs.reset()
 
         while not dones.all():
